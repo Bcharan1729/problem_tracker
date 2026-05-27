@@ -1,0 +1,283 @@
+
+<h2 class="sr-only">Daily coding problem tracker — log problems solved per platform each day</h2>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); }
+  .wrap { padding: 1rem 0; }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+  .title { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; }
+  .stat-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .stat-val { font-size: 24px; font-weight: 500; color: var(--color-text-primary); }
+  .section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .section-title { font-size: 14px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+  .field label { font-size: 12px; color: var(--color-text-secondary); display: block; margin-bottom: 5px; }
+  .field input, .field select { width: 100%; }
+  .btn-add { background: var(--color-text-primary); color: var(--color-background-primary); border: none; border-radius: var(--border-radius-md); padding: 8px 16px; font-size: 14px; cursor: pointer; height: 36px; white-space: nowrap; }
+  .btn-add:hover { opacity: 0.8; }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .log-table th { text-align: left; font-size: 12px; font-weight: 500; color: var(--color-text-secondary); padding: 6px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .log-table td { padding: 8px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); }
+  .log-table tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+  .tag-lc  { background: #E6F1FB; color: #0C447C; }
+  .tag-cf  { background: #FAECE7; color: #712B13; }
+  .tag-hr  { background: #EAF3DE; color: #27500A; }
+  .tag-gfg { background: #FAEEDA; color: #633806; }
+  .tag-at  { background: #EEEDFE; color: #3C3489; }
+  .tag-other { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+  .del-btn { background: none; border: none; cursor: pointer; color: var(--color-text-secondary); font-size: 16px; padding: 2px 6px; border-radius: 4px; }
+  .del-btn:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+  .empty { text-align: center; padding: 2rem; color: var(--color-text-secondary); font-size: 14px; }
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  @media (max-width: 560px) {
+    .form-row { grid-template-columns: 1fr 1fr; }
+    .chart-row { grid-template-columns: 1fr; }
+  }
+  .filter-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .filter-btn { font-size: 12px; padding: 4px 12px; border-radius: 999px; border: 0.5px solid var(--color-border-secondary); background: none; cursor: pointer; color: var(--color-text-secondary); }
+  .filter-btn.active { background: var(--color-text-primary); color: var(--color-background-primary); border-color: var(--color-text-primary); }
+  .streak-badge { font-size: 12px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 4px 12px; color: var(--color-text-secondary); }
+</style>
+
+<div class="wrap">
+  <div class="top-bar">
+    <span class="title"><i class="ti ti-code" aria-hidden="true" style="font-size:18px; vertical-align:-2px; margin-right:6px;"></i>Problem Tracker</span>
+    <span class="streak-badge" id="streak-badge">🔥 0-day streak</span>
+  </div>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-label">Total problems</div><div class="stat-val" id="s-total">0</div></div>
+    <div class="stat-card"><div class="stat-label">Today</div><div class="stat-val" id="s-today">0</div></div>
+    <div class="stat-card"><div class="stat-label">This week</div><div class="stat-val" id="s-week">0</div></div>
+    <div class="stat-card"><div class="stat-label">Active days</div><div class="stat-val" id="s-days">0</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><i class="ti ti-plus" aria-hidden="true"></i> Log problems</div>
+    <div class="form-row">
+      <div class="field"><label>Date</label><input type="date" id="inp-date" /></div>
+      <div class="field"><label>Platform</label>
+        <select id="inp-platform">
+          <option value="LeetCode">LeetCode</option>
+          <option value="Codeforces">Codeforces</option>
+          <option value="HackerRank">HackerRank</option>
+          <option value="GeeksforGeeks">GeeksforGeeks</option>
+          <option value="AtCoder">AtCoder</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Problems solved</label><input type="number" id="inp-count" min="1" value="1" /></div>
+      <div class="field" style="padding-top:0"><button class="btn-add" onclick="addEntry()"><i class="ti ti-plus" aria-hidden="true"></i> Add</button></div>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="section" style="margin-bottom:0">
+      <div class="section-title"><i class="ti ti-chart-bar" aria-hidden="true"></i> Last 14 days</div>
+      <div style="position:relative;height:180px"><canvas id="chart-daily" role="img" aria-label="Daily problems solved over last 14 days">Daily problem count chart.</canvas></div>
+    </div>
+    <div class="section" style="margin-bottom:0">
+      <div class="section-title"><i class="ti ti-chart-pie" aria-hidden="true"></i> By platform</div>
+      <div style="position:relative;height:180px"><canvas id="chart-platform" role="img" aria-label="Problems solved per platform">Platform distribution chart.</canvas></div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:1rem">
+    <div class="section-title"><i class="ti ti-list" aria-hidden="true"></i> History
+      <div class="filter-row" style="margin-bottom:0; margin-left:auto">
+        <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+        <button class="filter-btn" onclick="setFilter('LeetCode',this)">LeetCode</button>
+        <button class="filter-btn" onclick="setFilter('Codeforces',this)">Codeforces</button>
+        <button class="filter-btn" onclick="setFilter('HackerRank',this)">HackerRank</button>
+        <button class="filter-btn" onclick="setFilter('GeeksforGeeks',this)">GFG</button>
+        <button class="filter-btn" onclick="setFilter('AtCoder',this)">AtCoder</button>
+      </div>
+    </div>
+    <div id="log-area"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let entries = [];
+let activeFilter = 'all';
+let dailyChart, platformChart;
+
+const PLATFORM_COLORS = {
+  LeetCode: '#378ADD',
+  Codeforces: '#D85A30',
+  HackerRank: '#639922',
+  GeeksforGeeks: '#BA7517',
+  AtCoder: '#7F77DD',
+  Other: '#888780'
+};
+
+const TAG_CLASS = {
+  LeetCode: 'tag-lc', Codeforces: 'tag-cf', HackerRank: 'tag-hr',
+  GeeksforGeeks: 'tag-gfg', AtCoder: 'tag-at', Other: 'tag-other'
+};
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+document.getElementById('inp-date').value = todayStr();
+
+function addEntry() {
+  const date = document.getElementById('inp-date').value;
+  const platform = document.getElementById('inp-platform').value;
+  const count = parseInt(document.getElementById('inp-count').value) || 1;
+  if (!date) return;
+  const existing = entries.find(e => e.date === date && e.platform === platform);
+  if (existing) {
+    existing.count += count;
+  } else {
+    entries.push({ id: Date.now(), date, platform, count });
+  }
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+  save();
+  render();
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  save();
+  render();
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTable();
+}
+
+function save() {
+  try { localStorage.setItem('pt_entries', JSON.stringify(entries)); } catch(e) {}
+}
+
+function load() {
+  try {
+    const d = localStorage.getItem('pt_entries');
+    if (d) entries = JSON.parse(d);
+  } catch(e) {}
+}
+
+function getStreak() {
+  const days = [...new Set(entries.map(e => e.date))].sort((a,b) => b.localeCompare(a));
+  if (!days.length) return 0;
+  let streak = 0;
+  let cur = new Date(todayStr());
+  for (let i = 0; i < days.length; i++) {
+    const d = new Date(days[i]);
+    const diff = Math.round((cur - d) / 86400000);
+    if (diff === 0 || diff === 1) { streak++; cur = d; }
+    else break;
+  }
+  return streak;
+}
+
+function renderStats() {
+  const today = todayStr();
+  const weekAgo = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  const total = entries.reduce((s, e) => s + e.count, 0);
+  const td = entries.filter(e => e.date === today).reduce((s, e) => s + e.count, 0);
+  const wk = entries.filter(e => e.date >= weekAgo).reduce((s, e) => s + e.count, 0);
+  const days = new Set(entries.map(e => e.date)).size;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-today').textContent = td;
+  document.getElementById('s-week').textContent = wk;
+  document.getElementById('s-days').textContent = days;
+  const streak = getStreak();
+  document.getElementById('streak-badge').textContent = `🔥 ${streak}-day streak`;
+}
+
+function renderCharts() {
+  const last14 = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+    const cnt = entries.filter(e => e.date === d).reduce((s, e) => s + e.count, 0);
+    last14.push({ d: d.slice(5), cnt });
+  }
+
+  if (dailyChart) dailyChart.destroy();
+  dailyChart = new Chart(document.getElementById('chart-daily'), {
+    type: 'bar',
+    data: {
+      labels: last14.map(x => x.d),
+      datasets: [{
+        data: last14.map(x => x.cnt),
+        backgroundColor: '#378ADD',
+        borderRadius: 4,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 11 }, maxRotation: 45, autoSkip: false }, grid: { display: false } },
+        y: { ticks: { font: { size: 11 }, stepSize: 1 }, grid: { color: 'rgba(128,128,128,0.1)' }, beginAtZero: true }
+      }
+    }
+  });
+
+  const platMap = {};
+  entries.forEach(e => { platMap[e.platform] = (platMap[e.platform] || 0) + e.count; });
+  const plats = Object.keys(platMap);
+  if (platformChart) platformChart.destroy();
+  if (plats.length === 0) {
+    platformChart = null;
+    return;
+  }
+  platformChart = new Chart(document.getElementById('chart-platform'), {
+    type: 'doughnut',
+    data: {
+      labels: plats,
+      datasets: [{
+        data: plats.map(p => platMap[p]),
+        backgroundColor: plats.map(p => PLATFORM_COLORS[p] || '#888780'),
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: { legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12 } } }
+    }
+  });
+}
+
+function renderTable() {
+  const area = document.getElementById('log-area');
+  const filtered = activeFilter === 'all' ? entries : entries.filter(e => e.platform === activeFilter);
+  if (!filtered.length) {
+    area.innerHTML = '<div class="empty"><i class="ti ti-inbox" aria-hidden="true" style="font-size:24px;display:block;margin-bottom:8px;"></i>No entries yet. Log your first problem above!</div>';
+    return;
+  }
+  const rows = filtered.map(e => `
+    <tr>
+      <td>${e.date}</td>
+      <td><span class="tag ${TAG_CLASS[e.platform] || 'tag-other'}">${e.platform}</span></td>
+      <td style="font-weight:500">${e.count}</td>
+      <td><button class="del-btn" onclick="deleteEntry(${e.id})" title="Delete"><i class="ti ti-trash" aria-hidden="true"></i></button></td>
+    </tr>
+  `).join('');
+  area.innerHTML = `<table class="log-table">
+    <thead><tr><th>Date</th><th>Platform</th><th>Problems</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+function render() {
+  renderStats();
+  renderCharts();
+  renderTable();
+}
+
+load();
+render();
+</script>
